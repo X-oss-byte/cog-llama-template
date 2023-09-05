@@ -34,13 +34,12 @@ class DatasetBuilder:
 
     def batch_tokenize(self, texts):
         """Tokenizes text. Presently doesn't pad inputs, just returns input ids."""
-        tokenized = [
+        return [
             self.tokenizer(
                 prompt, return_tensors="pt", padding="longest", truncation=True
             ).input_ids
             for prompt in texts
         ]
-        return tokenized
 
     def construct_dataset(self, input_data):
         prompts = [val["prompt"] for val in input_data]
@@ -168,12 +167,15 @@ def load_model(model_name_or_path):
     if model_name_or_path is None:
         model_name_or_path = BASE_WEIGHTS_PATH
 
-    if 'tensors' in BASE_WEIGHTS_PATH:
-        model = load_tensorizer(model_name_or_path, plaid_mode=False, cls=LlamaForCausalLM)
-    else:
-        model = load_huggingface_model(model_name_or_path, load_in_4bit=LOAD_IN_4BIT)
-
-    return model
+    return (
+        load_tensorizer(
+            model_name_or_path, plaid_mode=False, cls=LlamaForCausalLM
+        )
+        if 'tensors' in BASE_WEIGHTS_PATH
+        else load_huggingface_model(
+            model_name_or_path, load_in_4bit=LOAD_IN_4BIT
+        )
+    )
 
 def print_trainable_parameters(model):
     """

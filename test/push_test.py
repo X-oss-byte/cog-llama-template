@@ -28,7 +28,11 @@ training_input = {
     "max_steps":10
 }
 
-training = replicate.trainings.create(version=model_name + ":" + version.id, input=training_input, destination="replicate-internal/training-scratch")
+training = replicate.trainings.create(
+    version=f"{model_name}:{version.id}",
+    input=training_input,
+    destination="replicate-internal/training-scratch",
+)
 
 for val in predictions:
     val.wait()

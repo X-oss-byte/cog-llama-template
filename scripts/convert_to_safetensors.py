@@ -21,11 +21,7 @@ def shared_pointers(tensors):
     ptrs = defaultdict(list)
     for k, v in tensors.items():
         ptrs[v.data_ptr()].append(k)
-    failing = []
-    for ptr, names in ptrs.items():
-        if len(names) > 1:
-            failing.append(names)
-    return failing
+    return [names for names in ptrs.values() if len(names) > 1]
 
 
 def convert_file(
@@ -48,8 +44,7 @@ def convert_file(
     save_file(loaded, sf_filename, metadata={"format": "pt"})
     check_file_size(sf_filename, pt_filename)
     reloaded = load_file(sf_filename)
-    for k in loaded:
-        pt_tensor = loaded[k]
+    for k, pt_tensor in loaded.items():
         sf_tensor = reloaded[k]
         if not torch.equal(pt_tensor, sf_tensor):
             raise RuntimeError(f"The output tensors do not match for key {k}")

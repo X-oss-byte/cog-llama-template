@@ -46,7 +46,7 @@ class Predictor(BasePredictor):
     def setup(self, weights: Optional[Path] = None):
         print('starting setup')
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        
+
         if weights is not None and weights.name == "weights":
             # bugfix
             weights = None
@@ -61,16 +61,13 @@ class Predictor(BasePredictor):
                 from src.exllama_predictor import ExllamaGenerator
                 self.generator = ExllamaGenerator(weights)
                 self.use_exllama = True
-            
-            else:
-                if os.path.isdir(weights):
-                    self.model = self.load_huggingface_model(weights, load_in_4bit=LOAD_IN_4BIT)
-                    self.tokenizer = load_tokenizer()
-                    self.use_exllama = False
 
-        
-        # If weights are passed in, they are LoRa weights
-        # so we need to download the fp16 weights and load with peft
+            elif os.path.isdir(weights):
+                self.model = self.load_huggingface_model(weights, load_in_4bit=LOAD_IN_4BIT)
+                self.tokenizer = load_tokenizer()
+                self.use_exllama = False
+
+
         elif '.zip' in str(weights):
             weights = str(weights)
             self.model = self.load_peft(weights)
@@ -117,67 +114,54 @@ class Predictor(BasePredictor):
         print(f"weights loaded in {time.time() - st}")
         return model
 
-    def predict(
-        self,
-        prompt: str = Input(description=f"Prompt to send to Llama v2."),
-        system_prompt: str = Input(
+    def predict(self, prompt: str = Input(description="Prompt to send to Llama v2."), system_prompt: str = Input(
             description="System prompt to send to Llama v2. This is prepended to the prompt and helps guide system behavior.", 
             default=DEFAULT_SYSTEM_PROMPT,
-        ),
-        max_new_tokens: int = Input(
+        ), max_new_tokens: int = Input(
             description="Maximum number of tokens to generate. A word is generally 2-3 tokens",
             ge=1,
             default=500,
-        ),
-        min_new_tokens: int = Input(
+        ), min_new_tokens: int = Input(
             description="Minimum number of tokens to generate. To disable, set to -1. A word is generally 2-3 tokens.",
             ge=-1,
             default=-1,
-        ),
-        temperature: float = Input(
+        ), temperature: float = Input(
             description="Adjusts randomness of outputs, greater than 1 is random and 0 is deterministic, 0.75 is a good starting value.",
             ge=0.01,
             le=5,
             default=0.95,
-        ),
-        top_p: float = Input(
+        ), top_p: float = Input(
             description="When decoding text, samples from the top p percentage of most likely tokens; lower to ignore less likely tokens",
             ge=0.0,
             le=1.0,
             default=0.95,
-        ),
-        top_k: int = Input(
+        ), top_k: int = Input(
             description="When decoding text, samples from the top k most likely tokens; lower to ignore less likely tokens",
             ge=0,
             default=250,
-        ),
-        repetition_penalty: float = Input(
+        ), repetition_penalty: float = Input(
             description="Penalty for repeated words in generated text; 1 is no penalty, values greater than 1 discourage repetition, less than 1 encourage it.",
             ge=0.01,
             le=5,
             default=1.15,
-        ),
-        repetition_penalty_sustain: int = Input(
+        ), repetition_penalty_sustain: int = Input(
             description="Number of most recent tokens to apply repetition penalty to, -1 to apply to whole context",
             ge=-1,
             default=256,
-        ),
-        token_repetition_penalty_decay: int = Input(
+        ), token_repetition_penalty_decay: int = Input(
             description="Gradually decrease penalty over this many tokens",
             ge=1,
             default=128,
-        ),
-        debug: bool = Input(
+        ), debug: bool = Input(
             description="provide debugging output in logs", default=False
-        ),
-    ) -> ConcatenateIterator: 
+        )) -> ConcatenateIterator: 
         
         if USE_SYSTEM_PROMPT:
             prompt = prompt.strip('\n').lstrip(B_INST).rstrip(E_INST).strip()
             prompt_templated = PROMPT_TEMPLATE.format(system_prompt=system_prompt.strip(), instruction=prompt.strip())
         else:
             prompt_templated = prompt
-        
+
         if self.use_exllama:
             n_tokens = 0
             st = time.time()
@@ -196,8 +180,7 @@ class Predictor(BasePredictor):
                 yield decoded_token
             t = time.time() - st
             print(f" ** Speed: {n_tokens / t:.2f} tokens/second")
-        
-        # This is our original generation code
+
         else:
 
             input = self.tokenizer(prompt_templated, return_tensors="pt").input_ids.to(self.device)
@@ -232,9 +215,8 @@ class Predictor(BasePredictor):
                             prev_ids = [cur_id]
                             continue
 
-                        # there are tokens to yield
                         else:
-                            token = ' ' + self.tokenizer.decode(prev_ids)
+                            token = f' {self.tokenizer.decode(prev_ids)}'
                             prev_ids = [cur_id]
 
                             if not first_token_yielded:

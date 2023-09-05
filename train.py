@@ -94,10 +94,8 @@ def train(
 
     def _arg_if_present(var, var_name):
         """Need to wrap any arguments whose default value in train() is `None`"""
-        if var:
-            return f" --{var_name} {var}"
-        return " "
-        
+        return f" --{var_name} {var}" if var else " "
+
     args = [
         "/root/.pyenv/shims/deepspeed",
         num_gpus_flag,

@@ -142,7 +142,7 @@ def test_python_deserialization():
 
     print(f"weignts downloaded in {time.time() - st}")
 
-    print(f"deserializing weights from memory")
+    print("deserializing weights from memory")
     config = AutoConfig.from_pretrained(CONFIG_LOCATION)
 
     logging.disable(logging.WARN) # turns off long message about not training the model

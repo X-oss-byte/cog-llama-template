@@ -23,7 +23,7 @@ class Preprocessor:
 
     def batch_tokenize(self, texts):
         """Tokenizes text. Presently doesn't pad inputs, just returns input ids."""
-        tokenized = [
+        return [
             self.tokenizer(
                 prompt,
                 return_tensors="pt",
@@ -31,7 +31,6 @@ class Preprocessor:
             ).input_ids
             for prompt in texts
         ]
-        return tokenized
 
     def make_prompt(self, input_row):
         if len(input_row["input"]) > 1:

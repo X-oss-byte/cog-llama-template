@@ -16,8 +16,13 @@ torch.set_printoptions(precision = 10)
 
 def next_logits(generator, input_ids, apply_lora = None, last_id_only = True, input_mask = None):
     
-    n_logits = generator.model.forward(input_ids, generator.cache, last_id_only, lora=apply_lora, input_mask=input_mask)
-    return n_logits
+    return generator.model.forward(
+        input_ids,
+        generator.cache,
+        last_id_only,
+        lora=apply_lora,
+        input_mask=input_mask,
+    )
 
 def begin(generator):
     if generator.cache is None: generator.cache = ExLlamaCache(generator.model)
@@ -105,7 +110,7 @@ class ExllamaGenerator:
                 generator.disallow_tokens([generator.tokenizer.newline_token_id, generator.tokenizer.eos_token_id])
             else:
                 generator.disallow_tokens(None)
-            
+
             gen_token = generator.beam_search()
             if gen_token.item() == generator.tokenizer.eos_token_id:
                 break
@@ -119,7 +124,4 @@ class ExllamaGenerator:
             skip_space = prompt.endswith(("\n", "[/INST]")) and new_text.startswith(" ")  # Bit prettier console output
             prompt += new_text
             if skip_space: new_text = new_text[1:]
-            # Why are we decoding to "�" so frequently? Need to compare to our original code.
-            new_text = "" if new_text == "�" else new_text
-
-            yield new_text
+            yield "" if new_text == "�" else new_text

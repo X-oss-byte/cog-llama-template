@@ -38,8 +38,7 @@ def load_tokenizer():
 def pull_gcp_file(weights, local_filename):
     """Pulls weights from GCP to local storage"""
     pattern = r'https://pbxt\.replicate\.delivery/([^/]+/[^/]+)'
-    match = re.search(pattern, weights)
-    if match:
+    if match := re.search(pattern, weights):
         weights = f"gs://replicate-files/{match.group(1)}"
 
     command = (

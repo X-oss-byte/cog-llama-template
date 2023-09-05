@@ -7,7 +7,7 @@ import asyncio
 
 class Logger:
     def __init__(self, marker: str = 'predict-timings'):
-        self.marker = marker + "%s" % random.randint(0, 1000000)
+        self.marker = f"{marker}{random.randint(0, 1000000)}"
         self.start = time.time()
         self.last = self.start
     
@@ -26,11 +26,8 @@ class Logger:
 def check_files_exist(remote_files, local_path):
     # Get the list of local file names
     local_files = os.listdir(local_path)
-    
-    # Check if each remote file exists in the local directory
-    missing_files = [file for file in remote_files if file not in local_files]
-    
-    return missing_files
+
+    return [file for file in remote_files if file not in local_files]
 
 async def download_file_with_pget(remote_path, dest_path):
     # Create the subprocess
@@ -99,7 +96,7 @@ def maybe_download_with_pget(
                 logger.info(f"Downloading {missing_files} from {remote_path} to {path}")
             asyncio.run(download_files_with_pget(remote_path, path, missing_files))
             if logger:
-                logger.info(f"Finished download")
+                logger.info("Finished download")
             print(f"Finished download in {time.time() - st:.2f}s")
 
 
